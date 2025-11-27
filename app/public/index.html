@@ -1,0 +1,51 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8"/>
+    <title>To-Do Sample</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <style>
+      body { font-family: Arial, sans-serif; margin: 2rem; }
+      input, button { padding: .5rem; font-size: 1rem; }
+      ul { list-style:none; padding:0; }
+      li { margin: .5rem 0; }
+      .done { text-decoration: line-through; color: gray; }
+    </style>
+  </head>
+  <body>
+    <h1>To-Do Sample</h1>
+    <input id="todoText" placeholder="Buy groceries" />
+    <button id="addBtn">Add</button>
+    <ul id="list"></ul>
+
+    <script>
+      async function load() {
+        const res = await fetch('/api/todos');
+        const todos = await res.json();
+        const list = document.getElementById('list');
+        list.innerHTML = '';
+        todos.forEach(t => {
+          const li = document.createElement('li');
+          li.innerHTML = `<span class="${t.done ? 'done' : ''}">${t.text}</span>
+                          <button data-id="${t.id}">${t.done ? 'Undo' : 'Done'}</button>`;
+          list.appendChild(li);
+        });
+        document.querySelectorAll('button[data-id]').forEach(b => {
+          b.onclick = async () => {
+            const id = b.getAttribute('data-id');
+            await fetch('/api/todos/' + id + '/toggle', { method: 'POST' });
+            load();
+          };
+        });
+      }
+      document.getElementById('addBtn').onclick = async () => {
+        const text = document.getElementById('todoText').value;
+        if (!text) return;
+        await fetch('/api/todos', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ text }) });
+        document.getElementById('todoText').value = '';
+        load();
+      };
+      load();
+    </script>
+  </body>
+</html>
